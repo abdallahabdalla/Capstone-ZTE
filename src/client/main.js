@@ -5,6 +5,7 @@ const CONFIG = {
   authentikBase: 'http://localhost:9000',
   clientId: 'my-app',
   redirectUri: 'http://localhost:5173/callback',
+  logoutUri: 'http://localhost:5173',
   backendUrl: 'http://localhost:4000',
   scope: 'openid profile email'
 };
@@ -123,13 +124,23 @@ async function handleCallback() {
 
     const data = await response.json();
 
-    if (data.access_token) {
-      accessToken = data.access_token;
-      tokenExpiry = Date.now() + data.expires_in * 1000;
+console.log('Token response:', data);
 
-      // Store token
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('token_expiry', tokenExpiry);
+    if (data.access_token) {
+  accessToken = data.access_token;
+  tokenExpiry = Date.now() + data.expires_in * 1000;
+
+  // Store tokens — including id_token for logout
+  localStorage.setItem('access_token', accessToken);
+localStorage.setItem('token_expiry', tokenExpiry.toString());
+
+// Explicitly check and store id_token
+if (data.id_token) {
+  localStorage.setItem('id_token', data.id_token);
+  console.log('ID token stored successfully');
+} else {
+  console.log('No id_token in response');
+}
 
       // Update UI
       document.getElementById('token-status').textContent = 'Valid';
@@ -203,6 +214,63 @@ async function callSecureEndpoint() {
   } catch (err) {
     log('Error connecting to backend: ' + err.message, 'danger');
   }
+}
+
+// ============================================
+// Logout Flow
+// ============================================
+function logout() {
+  if (!accessToken) {
+    log('No active session to logout from', 'warn');
+    return;
+  }
+
+  log('Logging out — clearing session...', 'warn');
+
+  // Clear token from memory
+  accessToken = null;
+  tokenExpiry = null;
+
+  // Clear stored token
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('token_expiry');
+  localStorage.removeItem('id_token');
+
+  // Stop the timer
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  // Reset all UI elements
+  document.getElementById('token-status').textContent = 'No Token';
+  document.getElementById('timer').textContent = '—';
+  document.getElementById('last-response').textContent = '—';
+  document.getElementById('token-display').textContent = 'No token yet';
+
+  // Reset all badges
+  ['badge-step1','badge-step2','badge-step3',
+   'badge-step4','badge-step5','badge-step6',
+   'badge-response'].forEach(id => setBadge(id, 'waiting', 'gray'));
+
+  log('Session cleared — redirecting to Authentik logout...', 'warn');
+
+  // Redirect to Authentik end session endpoint
+  setTimeout(() => {
+    const idToken = localStorage.getItem('id_token');
+console.log('ID token retrieved for logout:', idToken ? 'found' : 'not found');
+
+const logoutParams = new URLSearchParams({
+  post_logout_redirect_uri: CONFIG.logoutUri,
+});
+
+if (idToken) {
+  logoutParams.append('id_token_hint', idToken);
+}
+
+window.location.href =
+  `${CONFIG.authentikBase}/application/o/my-app/end-session/?${logoutParams}`;
+   }, 1500);
 }
 
 // ============================================
