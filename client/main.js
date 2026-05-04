@@ -277,6 +277,9 @@ function logout() {
 
   log('Logging out — clearing session...', 'warn');
 
+  // ✅ FIX: Grab id_token BEFORE removing it from localStorage
+  const idToken = localStorage.getItem('id_token');
+
   accessToken = null;
   tokenExpiry = null;
   refreshToken = null;
@@ -302,14 +305,9 @@ function logout() {
 
   log('Session cleared — redirecting to Authentik logout...', 'warn');
 
-  setTimeout(() => {
-    const idToken = localStorage.getItem('id_token');
-    const logoutParams = new URLSearchParams({
-      post_logout_redirect_uri: CONFIG.logoutUri,
-    });
-    if (idToken) logoutParams.append('id_token_hint', idToken);
-    window.location.href =
-      `${CONFIG.authentikBase}/application/o/my-app/end-session/?${logoutParams}`;
+  // ✅ FIX: Use the idToken variable captured above (not localStorage)
+   setTimeout(() => {
+    window.location.href = CONFIG.logoutUri;
   }, 1500);
 }
 
