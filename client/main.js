@@ -8,12 +8,23 @@ const CONFIG = {
   scope: 'openid profile email offline_access'
 };
 
+// Session Inactivity Settings Testing
+//const SESSION_TIMEOUT = 30 * 1000;  // 30 seconds
+//const SESSION_WARNING = 10 * 1000;  // warn at 10 seconds
+
+// Session Inactivity Settings
+const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
+const SESSION_WARNING = 5 * 60 * 1000; // warn at 5 minutes before auto-logout
+
 // State
-let tokenExpiry = null;
+let tokenExpiry = null; // timestamp when token expires
 let timerInterval = null;
 let accessToken = null;
 let refreshToken = null;
 let autoRefreshTriggered = false;
+let sessionTimer = null;
+let sessionWarningTimer = null;
+let sessionWarningInterval = null;
 
 // Logging
 function log(msg, type = 'info') {
@@ -75,6 +86,120 @@ function handleTokenExpiry() {
   document.getElementById('last-response').textContent = '401';
   log('Token expired — login required', 'danger');
 }
+
+// ============================================
+// Session Inactivity Timer
+// ============================================
+
+function createWarningBanner() {
+  if (document.getElementById('session-warning')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'session-warning';
+  banner.style.cssText = `
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #7a2a00;
+    color: #fff;
+    text-align: center;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: bold;
+    z-index: 9999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  `;
+  banner.innerHTML = `
+    ⚠️ You will be logged out due to inactivity in
+    <span id="session-countdown" style="font-size:17px; margin: 0 6px;">5:00</span>
+    <button onclick="resetSessionTimer()" style="
+      margin-left: 16px;
+      padding: 5px 14px;
+      background: #fff;
+      color: #7a2a00;
+      border: none;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    ">Stay Logged In</button>
+  `;
+  document.body.prepend(banner);
+}
+
+function showSessionWarning() {
+  const banner = document.getElementById('session-warning');
+  if (banner) banner.style.display = 'block';
+  log('⚠️ Inactivity warning — 5 minutes until auto-logout', 'warn');
+
+  let remaining = SESSION_WARNING;
+
+  if (sessionWarningInterval) clearInterval(sessionWarningInterval);
+  sessionWarningInterval = setInterval(() => {
+    remaining -= 1000;
+    if (remaining <= 0) {
+      clearInterval(sessionWarningInterval);
+      return;
+    }
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    const el = document.getElementById('session-countdown');
+    if (el) el.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, 1000);
+}
+
+function hideSessionWarning() {
+  const banner = document.getElementById('session-warning');
+  if (banner) banner.style.display = 'none';
+  if (sessionWarningInterval) {
+    clearInterval(sessionWarningInterval);
+    sessionWarningInterval = null;
+  }
+  const el = document.getElementById('session-countdown');
+  if (el) el.textContent = '5:00';
+}
+
+function resetSessionTimer() {
+  if (!accessToken) return; // only run if user is logged in
+
+  hideSessionWarning();
+
+  if (sessionTimer) clearTimeout(sessionTimer);
+  if (sessionWarningTimer) clearTimeout(sessionWarningTimer);
+
+  // Warn at 5 minutes before the hour is up
+  sessionWarningTimer = setTimeout(() => {
+    showSessionWarning();
+  }, SESSION_TIMEOUT - SESSION_WARNING);
+
+  // Auto-logout after full hour
+  sessionTimer = setTimeout(() => {
+    log('Auto-logout — 1 hour of inactivity reached', 'danger');
+    logout();
+  }, SESSION_TIMEOUT);
+}
+
+function startSessionTimer() {
+  createWarningBanner();
+  resetSessionTimer();
+
+  // Reset timer on any user activity
+  ['mousemove', 'click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+    window.addEventListener(event, resetSessionTimer, { passive: true });
+  });
+
+  log('Session inactivity timer started — auto-logout after 1 hour of inactivity', 'info');
+}
+
+function stopSessionTimer() {
+  if (sessionTimer) { clearTimeout(sessionTimer); sessionTimer = null; }
+  if (sessionWarningTimer) { clearTimeout(sessionWarningTimer); sessionWarningTimer = null; }
+  hideSessionWarning();
+
+  ['mousemove', 'click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+    window.removeEventListener(event, resetSessionTimer);
+  });
+}
+
 
 // ============================================
 // Token Refresh
@@ -206,6 +331,7 @@ async function handleCallback() {
       setBadge('badge-step3', 'issued', 'success');
       log('JWT issued successfully — 5 min timer started', 'success');
       startTimer();
+      startSessionTimer(); // Start the session timer after successful login
       window.history.replaceState({}, '', '/');
     } else {
       log('Token exchange failed — check Authentik config', 'danger');
@@ -293,6 +419,7 @@ function logout() {
     clearInterval(timerInterval);
     timerInterval = null;
   }
+  stopSessionTimer(); // Stop the session timer when logging out
 
   document.getElementById('token-status').textContent = 'No Token';
   document.getElementById('timer').textContent = '—';
@@ -330,6 +457,7 @@ window.addEventListener('load', () => {
     log('Existing valid token found — ready to use', 'success');
     setBadge('badge-step3', 'active', 'success');
     startTimer();
+    startSessionTimer(); // Start the session timer on page load (for returning users)
   }
 
   if (window.location.search.includes('code=')) {
