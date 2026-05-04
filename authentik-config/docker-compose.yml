@@ -4,6 +4,12 @@ services:
   postgresql:
     image: docker.io/library/postgres:16-alpine
     restart: unless-stopped
+    healthcheck:                         # ← ADDED
+      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       POSTGRES_PASSWORD: authentik
       POSTGRES_USER: authentik
@@ -14,6 +20,12 @@ services:
   redis:
     image: docker.io/library/redis:alpine
     restart: unless-stopped
+    healthcheck:                         # ← ADDED
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
 
   server:
     image: ghcr.io/goauthentik/server:latest
@@ -31,8 +43,16 @@ services:
       - "9000:9000"
       - "9443:9443"
     depends_on:
-      - postgresql
-      - redis
+      postgresql:
+        condition: service_healthy       # ← UPDATED (was just "- postgresql")
+      redis:
+        condition: service_healthy       # ← UPDATED (was just "- redis")
+    healthcheck:                         # ← ADDED
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9000/-/health/ready/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   worker:
     image: ghcr.io/goauthentik/server:latest
@@ -46,8 +66,10 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: authentik
       AUTHENTIK_SECRET_KEY: "abdalla-abdalla-capstone-project-zte-sme-uofpeople"
     depends_on:
-      - postgresql
-      - redis
+      postgresql:
+        condition: service_healthy       # ← UPDATED (was just "- postgresql")
+      redis:
+        condition: service_healthy       # ← UPDATED (was just "- redis")
 
 volumes:
   database:
