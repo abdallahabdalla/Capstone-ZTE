@@ -9,7 +9,7 @@ const CONFIG = {
 };
 
 // Session Inactivity Settings Testing
-//const SESSION_TIMEOUT = 30 * 1000;  // 30 seconds
+//const SESSION_TIMEOUT = 15 * 1000;  // 15 seconds
 //const SESSION_WARNING = 10 * 1000;  // warn at 10 seconds
 
 // Session Inactivity Settings
@@ -403,7 +403,7 @@ function logout() {
 
   log('Logging out — clearing session...', 'warn');
 
-  // ✅ FIX: Grab id_token BEFORE removing it from localStorage
+  // FIX: Grab id_token BEFORE removing it from localStorage
   const idToken = localStorage.getItem('id_token');
 
   accessToken = null;
@@ -432,7 +432,7 @@ function logout() {
 
   log('Session cleared — redirecting to Authentik logout...', 'warn');
 
-  // ✅ FIX: Use the idToken variable captured above (not localStorage)
+  // FIX: Use the idToken variable captured above (not localStorage)
    setTimeout(() => {
     window.location.href = CONFIG.logoutUri;
   }, 1500);

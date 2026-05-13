@@ -8,13 +8,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// JWT Validation Middleware (orange box in your diagram)
+// JWT Validation Middleware (orange box in diagram)
 const checkJwt = jwt({
   secret: jwksRsa.expressJwtSecret({
     cache: true,
     rateLimit: true,
     jwksRequestsPerMinute: 5,
-    jwksUri: process.env.JWKS_URI
+    jwksUri: process.env.JWKS_URI // resolves to the JWKS URL via .env
   }),
   audience: 'my-app',
   issuer: process.env.AUTHENTIK_ISSUER,
@@ -29,7 +29,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Protected Endpoint — /secure-data (grey box in your diagram)
+// Protected Endpoint — /secure-data (grey box in diagram)
 app.get('/secure-data', checkJwt, (req, res) => {
   res.json({
     message: 'You have access to protected data!',
@@ -38,7 +38,7 @@ app.get('/secure-data', checkJwt, (req, res) => {
   });
 });
 
-// Handles 401 Unauthorized (red arrow in your diagram)
+// Handles 401 Unauthorized (red arrow in diagram)
 app.use((err, req, res, next) => {
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({ 
