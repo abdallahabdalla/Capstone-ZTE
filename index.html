@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JWT Auth Demo</title>
+  <link rel="stylesheet" crossorigin href="/Capstone-ZTE/assets/index-e1Wwp5uE.css">
+</head>
+<body>
+
+  <div class="container">
+
+    <h1>JWT Auth Dashboard</h1>
+
+    <!-- Status Cards -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Token Status</div>
+        <div class="metric-value" id="token-status">No Token</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Time Remaining</div>
+        <div class="metric-value" id="timer">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Last Response</div>
+        <div class="metric-value" id="last-response">—</div>
+      </div>
+    </div>
+
+    <!-- Three Zones -->
+    <div class="zones">
+
+      <!-- Client Zone -->
+      <div class="zone">
+        <div class="zone-title">Client Zone</div>
+        <p class="zone-sub">User / Browser</p>
+        <div class="buttons">
+          <button id="btn-login" onclick="login()">
+            Login with Authentik
+          </button>
+          <button id="btn-secure" onclick="callSecureEndpoint()">
+            Call /secure-data
+          </button>
+          <button id="btn-refresh" onclick="refreshAccessToken()">
+            Refresh Token
+          </button>
+          <button id="btn-logout" onclick="logout()">
+            Logout
+          </button>
+        </div>
+      </div>
+
+      <!-- Identity Zone -->
+      <div class="zone">
+        <div class="zone-title">Identity Zone</div>
+        <p class="zone-sub">Authentik OIDC Provider</p>
+        <div class="steps">
+          <div class="step">
+            <span>1. Login Request (OIDC)</span>
+            <span class="badge" id="badge-step1">waiting</span>
+          </div>
+          <div class="step">
+            <span>2. MFA Authentication</span>
+            <span class="badge" id="badge-step2">waiting</span>
+          </div>
+          <div class="step">
+            <span>3. JWT Issued (5 min)</span>
+            <span class="badge" id="badge-step3">waiting</span>
+          </div>
+        </div>
+        <div class="token-box" id="token-display">
+          No token yet
+        </div>
+      </div>
+
+      <!-- Application Zone -->
+      <div class="zone">
+        <div class="zone-title">Application Zone</div>
+        <p class="zone-sub">JWT Validation Middleware</p>
+        <div class="steps">
+          <div class="step">
+            <span>4. Verify Signature</span>
+            <span class="badge" id="badge-step4">waiting</span>
+          </div>
+          <div class="step">
+            <span>5. Check Expiration</span>
+            <span class="badge" id="badge-step5">waiting</span>
+          </div>
+          <div class="step">
+            <span>6. Allow / Deny</span>
+            <span class="badge" id="badge-step6">waiting</span>
+          </div>
+          <div class="step">
+            <span>Response:</span>
+            <span class="badge" id="badge-response">—</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Activity Log -->
+    <div class="log-box">
+      <div class="log-title">Activity Log</div>
+      <div id="log"></div>
+    </div>
+
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
