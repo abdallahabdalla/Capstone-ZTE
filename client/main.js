@@ -9,12 +9,12 @@ const CONFIG = {
 };
 
 // Session Inactivity Settings Testing
-const SESSION_TIMEOUT = 15 * 1000;  // 15 seconds
-const SESSION_WARNING = 10 * 1000;  // warn at 10 seconds
+// const SESSION_TIMEOUT = 15 * 1000;  // 15 seconds
+// const SESSION_WARNING = 10 * 1000;  // warn at 10 seconds
 
 // Session Inactivity Settings
-// const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
-// const SESSION_WARNING = 5 * 60 * 1000; // warn at 5 minutes before auto-logout
+const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
+const SESSION_WARNING = 5 * 60 * 1000; // warn at 5 minutes before auto-logout
 
 // State
 let tokenExpiry = null; // timestamp when token expires
@@ -68,11 +68,11 @@ function startTimer() {
       `${mins}:${secs.toString().padStart(2, '0')}`;
 
     // Auto-refresh at 1 minute remaining
-    // if (remaining <= 60000 && !autoRefreshTriggered) {
-    //   autoRefreshTriggered = true;
-    //   log('1 minute remaining — auto-refreshing token...', 'warn');
-    //   refreshAccessToken();
-    // }
+    if (remaining <= 60000 && !autoRefreshTriggered) {
+      autoRefreshTriggered = true;
+      log('1 minute remaining — auto-refreshing token...', 'warn');
+      refreshAccessToken();
+    }
   }, 500);
 }
 

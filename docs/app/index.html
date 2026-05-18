@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Capstone ZTE — Zero Trust for SMEs</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117; color: #e6edf3; min-height: 100vh;
+    }
+    header {
+      background: linear-gradient(135deg, #0969da 0%, #1a3a6b 100%);
+      padding: 3rem 2rem; text-align: center;
+    }
+    header h1 { font-size: 2rem; margin-bottom: .5rem; }
+    header p  { color: #cce0ff; margin-bottom: 1.5rem; font-size: 1.1rem; }
+    .launch-btn {
+      display: inline-block; background: white; color: #0969da;
+      font-weight: 700; font-size: 1.1rem; padding: .8rem 2rem;
+      border-radius: 8px; text-decoration: none; transition: transform .15s;
+    }
+    .launch-btn:hover { transform: scale(1.04); background: #f0f6ff; }
+    main { max-width: 860px; margin: 2.5rem auto; padding: 0 1.5rem; }
+    h2 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: .4rem; margin: 2rem 0 .8rem; }
+    p, li { line-height: 1.7; color: #c9d1d9; }
+    ul { padding-left: 1.4rem; }
+    li { margin-bottom: .4rem; }
+    code {
+      background: #161b22; border: 1px solid #30363d;
+      padding: 2px 6px; border-radius: 4px; font-size: .9em;
+      font-family: 'SFMono-Regular', Consolas, monospace; color: #79c0ff;
+    }
+    pre {
+      background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+      padding: 1.2rem; overflow-x: auto; margin: .8rem 0;
+    }
+    pre code { background: none; border: none; padding: 0; color: #e6edf3; }
+    table { border-collapse: collapse; width: 100%; margin: .8rem 0; }
+    th { background: #161b22; color: #58a6ff; }
+    th, td { border: 1px solid #30363d; padding: .5rem 1rem; text-align: left; }
+    tr:nth-child(even) td { background: #161b22; }
+    footer { text-align: center; padding: 2rem; color: #484f58; font-size: .9rem; }
+    footer a { color: #58a6ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🔐 Zero Trust Architecture for SMEs</h1>
+  <p>MSIT 5910-01 Capstone Project — Lightweight Zero Trust using Authentik, JWT, and Docker</p>
+  <a class="launch-btn" href="./app/" target="_blank">🚀 Launch Live UI Demo →</a>
+</header>
+
+<main>
+
+  <h2>Project Overview</h2>
+  <p>A right-sized Zero Trust Authentication system for small and medium enterprises (SMEs). Uses <strong>Authentik</strong> as an OIDC identity provider with mandatory MFA, a Node.js/Express backend with JWT validation, and a Vite frontend dashboard — all running via Docker Compose.</p>
+
+  <h2>Architecture</h2>
+  <ul>
+    <li><strong>Client Zone</strong> — Vite vanilla JS frontend at <code>localhost:5173</code>. Login, token storage, refresh, logout.</li>
+    <li><strong>Identity Zone</strong> — Authentik at <code>localhost:9000</code>. OIDC authorization, Authy TOTP MFA, RS256 JWTs with 5-min expiration.</li>
+    <li><strong>Application Zone</strong> — Node.js/Express at <code>localhost:4000</code>. Validates every JWT via <code>express-jwt</code> + <code>jwks-rsa</code>.</li>
+  </ul>
+
+  <h2>Features</h2>
+  <ul>
+    <li>Login with MFA via Authy Authenticator (TOTP) through Authentik OIDC</li>
+    <li>Protected endpoint <code>GET /secure-data</code> requiring a valid Bearer token</li>
+    <li>JWT access tokens with 5-minute expiration</li>
+    <li>Automatic token refresh at 1 min remaining + manual refresh button</li>
+    <li>Logout clears tokens locally and redirects home</li>
+    <li>1-hour inactivity auto-logout with 5-min warning banner</li>
+    <li>Docker rapid restart policy with health checks on all containers</li>
+    <li>24 unit tests passing (backend + frontend)</li>
+  </ul>
+
+  <h2>Prerequisites</h2>
+  <ul>
+    <li>Docker Desktop</li>
+    <li>Node.js</li>
+    <li>Git</li>
+    <li>Authy Authenticator (MFA)</li>
+    <li>Postman (optional, API testing)</li>
+  </ul>
+
+  <h2>Installation &amp; Setup</h2>
+  <p><strong>1 — Clone the repo</strong></p>
+  <pre><code>git clone https://github.com/abdallahabdalla/Capstone-ZTE.git
+cd Capstone-ZTE</code></pre>
+
+  <p><strong>2 — Install dependencies</strong></p>
+  <pre><code>cd backend && npm install && cd ..
+cd client  && npm install && cd ..</code></pre>
+
+  <p><strong>3 — Configure environment</strong></p>
+  <pre><code># backend/.env
+JWKS_URI=http://localhost:9000/application/o/my-app/jwks/
+AUTHENTIK_ISSUER=http://localhost:9000/application/o/my-app/</code></pre>
+
+  <h2>Running the Project</h2>
+  <pre><code># Terminal 1 — Authentik
+cd ~/Documents/Capstone-ZTE/authentik-config && docker compose up -d
+
+# Terminal 2 — Backend
+cd ~/Documents/Capstone-ZTE/backend && node server.js
+
+# Terminal 3 — Frontend
+cd ~/Documents/Capstone-ZTE/client && npx vite</code></pre>
+  <p>Then open <code>http://localhost:5173</code> in your browser.</p>
+
+  <h2>Running Tests</h2>
+  <pre><code>cd backend && npm test   # 8 backend tests
+cd client  && npm test   # 16 frontend tests</code></pre>
+
+  <h2>Version History</h2>
+  <table>
+    <tr><th>Tag</th><th>Description</th></tr>
+    <tr><td>v1.0</td><td>Core JWT auth flow with MFA and protected endpoint</td></tr>
+    <tr><td>v1.1</td><td>Logout flow implemented</td></tr>
+    <tr><td>v1.2</td><td>Token refresh (auto + manual)</td></tr>
+    <tr><td>v1.3</td><td>Unit testing complete — 24 tests passing</td></tr>
+    <tr><td>v1.4</td><td>Docker restart policy + health checks</td></tr>
+    <tr><td>v1.5</td><td>Logout redirect bug fix</td></tr>
+    <tr><td>v1.6</td><td>1-hour inactivity auto-logout with warning banner</td></tr>
+  </table>
+
+</main>
+
+<footer>
+  <a href="https://github.com/abdallahabdalla/Capstone-ZTE">View on GitHub</a> · MSIT 5910-01 Capstone · Zero Trust for SMEs
+</footer>
+
+</body>
+</html>
