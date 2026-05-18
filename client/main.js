@@ -9,12 +9,12 @@ const CONFIG = {
 };
 
 // Session Inactivity Settings Testing
-//const SESSION_TIMEOUT = 15 * 1000;  // 15 seconds
-//const SESSION_WARNING = 10 * 1000;  // warn at 10 seconds
+const SESSION_TIMEOUT = 15 * 1000;  // 15 seconds
+const SESSION_WARNING = 10 * 1000;  // warn at 10 seconds
 
 // Session Inactivity Settings
-const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
-const SESSION_WARNING = 5 * 60 * 1000; // warn at 5 minutes before auto-logout
+// const SESSION_TIMEOUT = 60 * 60 * 1000; // 1 hour
+// const SESSION_WARNING = 5 * 60 * 1000; // warn at 5 minutes before auto-logout
 
 // State
 let tokenExpiry = null; // timestamp when token expires
@@ -68,22 +68,35 @@ function startTimer() {
       `${mins}:${secs.toString().padStart(2, '0')}`;
 
     // Auto-refresh at 1 minute remaining
-    if (remaining <= 60000 && !autoRefreshTriggered) {
-      autoRefreshTriggered = true;
-      log('1 minute remaining — auto-refreshing token...', 'warn');
-      refreshAccessToken();
-    }
+    // if (remaining <= 60000 && !autoRefreshTriggered) {
+    //   autoRefreshTriggered = true;
+    //   log('1 minute remaining — auto-refreshing token...', 'warn');
+    //   refreshAccessToken();
+    // }
   }, 500);
 }
 
 function handleTokenExpiry() {
   accessToken = null;
+  tokenExpiry = null;
+  refreshToken = null;
+  
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('token_expiry');
+  localStorage.removeItem('refresh_token');
+  localStorage.removeItem('id_token');
+
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  stopSessionTimer();
+
   document.getElementById('token-status').textContent = 'Expired';
   document.getElementById('timer').textContent = '0:00';
   document.getElementById('token-display').textContent = 'Token expired — please login again';
-  setBadge('badge-step3', 'expired', 'danger');
-  setBadge('badge-response', '401 Unauthorized', 'danger');
-  document.getElementById('last-response').textContent = '401';
+
+  ['badge-step1','badge-step2','badge-step3',
+   'badge-step4','badge-step5','badge-step6',
+   'badge-response'].forEach(id => setBadge(id, 'waiting', 'gray'));
+
   log('Token expired — login required', 'danger');
 }
 
